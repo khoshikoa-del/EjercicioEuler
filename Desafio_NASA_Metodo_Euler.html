@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desafío NASA 1962 | Método de Euler</title>
+<style>
+:root{--navy:#10243a;--blue:#1769aa;--cyan:#dff3fa;--ink:#202b36;--muted:#617181;--paper:#f4f7fa;--line:#d8e0e8;--white:#fff;--orange:#e68a32}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Arial,Helvetica,sans-serif}
+header{background:linear-gradient(120deg,#10243a,#1d527b);color:white;padding:42px 22px}
+.wrap{max-width:1050px;margin:auto;padding:0 18px}
+header .eyebrow{letter-spacing:2px;text-transform:uppercase;font-size:12px;color:#b8d9ee;font-weight:bold}
+h1{font-size:clamp(28px,5vw,43px);line-height:1.12;margin:10px 0}
+header p{max-width:780px;color:#e4edf5;margin:12px 0 0}
+main{padding:24px 0 55px}
+section,.panel{background:white;border:1px solid var(--line);border-radius:13px;padding:22px;margin:18px 0;box-shadow:0 3px 12px #142c4210}
+h2{color:var(--navy);font-size:23px;margin:0 0 13px}
+h3{color:#234a68;margin:20px 0 8px;font-size:18px}
+p{margin:8px 0}
+.note{background:#eef6fb;border-left:4px solid var(--blue);padding:12px 15px;border-radius:5px;margin:14px 0}
+.warning{background:#fff6e9;border-left:4px solid var(--orange);padding:12px 15px;border-radius:5px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}
+label{display:block;font-weight:bold;font-size:14px;color:#34495b}
+input{width:100%;padding:10px;margin-top:5px;border:1px solid #bdc9d4;border-radius:7px;font-size:16px}
+button{border:0;border-radius:8px;background:var(--blue);color:white;padding:12px 20px;font-weight:bold;font-size:15px;cursor:pointer;margin:14px 8px 0 0}
+button.secondary{background:#e7eef4;color:#183d5c}
+button:hover{filter:brightness(.94)}
+.formula{background:#f4f7fa;padding:13px;border-radius:8px;font-family:Georgia,serif;overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0}
+.stat{background:#f2f6f9;border-radius:9px;padding:14px}
+.stat small{display:block;color:var(--muted);font-weight:bold}
+.stat strong{display:block;font-size:23px;color:var(--navy);margin-top:5px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;margin-top:10px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:#edf3f7;color:#183d5c}
+th:first-child,td:first-child{text-align:center}
+canvas{width:100%;height:310px;border:1px solid var(--line);border-radius:9px;background:white}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:15px}
+.small{font-size:13px;color:var(--muted)}
+ol li,ul li{margin:7px 0}
+@media(max-width:600px){section,.panel{padding:16px}header{padding:30px 0}canvas{height:260px}}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+<div class="eyebrow">Métodos numéricos · Desafío de clase</div>
+<h1>Misión espacial: calcular el ascenso de un cohete</h1>
+<p>Una simulación didáctica inspirada en la carrera espacial y en el trabajo matemático de la NASA durante la década de 1960. Resuelve el movimiento vertical con el método de Euler y contrasta los resultados con la solución analítica.</p>
+</div>
+</header>
+<main class="wrap">
+<section>
+<h2>1. Contexto y misión</h2>
+<p>Estamos en 1962. Formas parte de un equipo de cálculo que debe estimar el movimiento vertical de un cohete experimental durante sus primeros segundos de ascenso. Las herramientas de cálculo son limitadas y debes aproximar su velocidad y altura mediante iteraciones.</p>
+<div class="note"><b>Tu misión:</b> calcular la velocidad y la altura a lo largo de 20 segundos, evaluar el error del método de Euler y decidir qué tamaño de paso permite obtener una aproximación más precisa.</div>
+<div class="warning"><b>Precisión histórica:</b> el desafío está inspirado en <i>Talentos ocultos (Hidden Figures)</i> y en la historia de los cálculos de trayectoria de la NASA. No afirma que esta ecuación concreta ni estos parámetros fueran utilizados en una misión real. El método de Euler es una herramienta numérica introductoria; las misiones reales requieren modelos físicos y métodos mucho más completos.</div>
+</section>
+<section>
+<h2>2. Datos del cohete experimental</h2>
+<div class="grid">
+<div><b>Masa</b><br>m = 1.000 kg</div><div><b>Empuje constante</b><br>T = 15.000 N</div>
+<div><b>Gravedad</b><br>g = 9,81 m/s²</div><div><b>Resistencia lineal</b><br>k = 100 kg/s</div>
+<div><b>Velocidad inicial</b><br>v(0) = 0 m/s</div><div><b>Altura inicial</b><br>y(0) = 0 m</div>
+</div>
+<h3>Modelo matemático</h3>
+<p>Tomamos el sentido hacia arriba como positivo. Las fuerzas consideradas son el empuje del motor, el peso y una fuerza de resistencia del aire proporcional a la velocidad y opuesta al movimiento.</p>
+<div class="formula">m · dv/dt = T − mg − kv</div>
+<div class="formula">dv/dt = T/m − g − (k/m)v = 5,19 − 0,1v</div>
+<div class="formula">dy/dt = v</div>
+<p>Condiciones iniciales: <b>v(0) = 0</b> y <b>y(0) = 0</b>.</p>
+</section>
+<section>
+<h2>3. Método de Euler</h2>
+<p>Para un sistema de dos ecuaciones, las actualizaciones explícitas son:</p>
+<div class="formula">v(n+1) = v(n) + h [5,19 − 0,1v(n)]</div>
+<div class="formula">y(n+1) = y(n) + h · v(n)</div>
+<p>En la actualización de la altura se utiliza la velocidad al inicio del intervalo. Este detalle explica parte del error de aproximación.</p>
+<h3>Ejemplo de la primera iteración (h = 2 s)</h3>
+<p>v(1) = 0 + 2(5,19 − 0,1 · 0) = <b>10,38 m/s</b>.</p>
+<p>y(1) = 0 + 2 · 0 = <b>0 m</b>.</p>
+<p class="small">El resultado de altura cero no significa que el cohete permanezca inmóvil: es la aproximación de Euler con un paso grande, que usa la velocidad inicial durante todo el primer intervalo.</p>
+</section>
+<section>
+<h2>4. Solución analítica de referencia</h2>
+<p>Para este modelo con parámetros constantes, la solución exacta de velocidad es:</p>
+<div class="formula">v(t) = 51,9 [1 − e<sup>−0,1t</sup>] m/s</div>
+<p>La altura se obtiene integrando la velocidad:</p>
+<div class="formula">y(t) = 51,9t − 519 [1 − e<sup>−0,1t</sup>] m</div>
+<p>Estas expresiones permiten comparar la aproximación numérica con el valor analítico en los mismos instantes.</p>
+</section>
+<section>
+<h2>5. Simulador de Euler y comparación</h2>
+<p>Modifica el tamaño de paso y el tiempo final. Los valores iniciales corresponden al desafío propuesto.</p>
+<div class="grid">
+<label>Masa m (kg)<input id="m" type="number" min="1" step="any" value="1000"></label>
+<label>Empuje T (N)<input id="T" type="number" step="any" value="15000"></label>
+<label>Gravedad g (m/s²)<input id="g" type="number" step="any" value="9.81"></label>
+<label>Coeficiente k (kg/s)<input id="k" type="number" min="0" step="any" value="100"></label>
+<label>Paso h (s)<input id="h" type="number" min="0.001" step="any" value="2"></label>
+<label>Tiempo final (s)<input id="tf" type="number" min="0.001" step="any" value="20"></label>
+</div>
+<button onclick="calculate()">Calcular simulación</button><button class="secondary" onclick="resetValues()">Restablecer valores</button>
+<div id="error" class="warning" style="display:none"></div>
+<div class="stats">
+<div class="stat"><small>Velocidad Euler al final</small><strong id="vE">—</strong><small>m/s</small></div>
+<div class="stat"><small>Velocidad analítica</small><strong id="vA">—</strong><small>m/s</small></div>
+<div class="stat"><small>Altura Euler al final</small><strong id="yE">—</strong><small>m</small></div>
+<div class="stat"><small>Altura analítica</small><strong id="yA">—</strong><small>m</small></div>
+<div class="stat"><small>Error absoluto de velocidad</small><strong id="ev">—</strong><small>m/s</small></div>
+<div class="stat"><small>Error absoluto de altura</small><strong id="ey">—</strong><small>m</small></div>
+</div>
+<h3>Gráfica de velocidad</h3><canvas id="velocityChart" width="950" height="310"></canvas>
+<h3>Gráfica de altura</h3><canvas id="heightChart" width="950" height="310"></canvas>
+<h3>Tabla de resultados</h3>
+<div class="tablewrap"><table><thead><tr><th>t (s)</th><th>v Euler (m/s)</th><th>v analítica (m/s)</th><th>y Euler (m)</th><th>y analítica (m)</th><th>Error v</th><th>Error y</th></tr></thead><tbody id="results"></tbody></table></div>
+<p class="small">La tabla muestra como máximo 101 filas distribuidas uniformemente si la simulación contiene más pasos. Los cálculos internos utilizan todos los pasos.</p>
+</section>
+<section>
+<h2>6. Desafío para entregar</h2>
+<ol>
+<li>Resuelve manualmente las primeras tres iteraciones de Euler con h = 2 s, mostrando velocidad y altura.</li>
+<li>Ejecuta la simulación hasta t = 20 s y registra la velocidad y la altura obtenidas.</li>
+<li>Calcula la solución analítica de v(t) y y(t), y evalúalas en t = 20 s.</li>
+<li>Calcula los errores absolutos de velocidad y altura al final de la simulación.</li>
+<li>Repite el cálculo con h = 1 s, h = 0,5 s y h = 0,25 s. Compara la precisión.</li>
+<li>Explica por qué Euler puede sobreestimar la velocidad y subestimar la altura en este ejemplo.</li>
+<li>Propón qué elementos físicos habría que añadir para acercarse a un lanzamiento real.</li>
+</ol>
+<h3>Preguntas de reflexión</h3>
+<ul>
+<li>¿Qué efecto tiene disminuir el tamaño de paso h?</li>
+<li>¿En qué se diferencia una aproximación numérica de una solución analítica?</li>
+<li>¿Por qué la altura calculada en la primera iteración de Euler es cero?</li>
+<li>¿Qué limitaciones tiene suponer empuje, masa, gravedad y resistencia constantes?</li>
+</ul>
+</section>
+<section>
+<h2>7. Criterios de evaluación sugeridos</h2>
+<div class="tablewrap"><table><thead><tr><th style="text-align:left">Criterio</th><th>Puntos</th></tr></thead><tbody>
+<tr><td style="text-align:left">Planteamiento e interpretación del modelo</td><td>3</td></tr>
+<tr><td style="text-align:left">Desarrollo manual de Euler</td><td>4</td></tr>
+<tr><td style="text-align:left">Solución analítica</td><td>3</td></tr>
+<tr><td style="text-align:left">Tablas, errores y comparación de pasos</td><td>3</td></tr>
+<tr><td style="text-align:left">Gráficas y simulador funcional</td><td>3</td></tr>
+<tr><td style="text-align:left">Interpretación y limitaciones físicas</td><td>2</td></tr>
+<tr><td style="text-align:left">Presentación y explicación</td><td>2</td></tr>
+<tr><th style="text-align:left">Total</th><th>20</th></tr>
+</tbody></table></div>
+</section>
+<footer>Desafío académico de Métodos Numéricos · Modelo simplificado con fines educativos</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function exact(t,A,B){
+ if(Math.abs(B)<1e-12) return {v:A*t,y:0.5*A*t*t};
+ const e=Math.exp(-B*t);
+ return {v:A/B*(1-e),y:A/B*(t-(1-e)/B)};
+}
+function draw(canvas,series,xLabel,yLabel){
+ const c=canvas,ctx=c.getContext('2d'),W=c.width,H=c.height,p={l:65,r:20,t:18,b:43};
+ ctx.clearRect(0,0,W,H);
+ const all=series.flatMap(s=>s.data.map(d=>d[1]));
+ let ymin=Math.min(0,...all),ymax=Math.max(1,...all);
+ if(ymax===ymin)ymax=ymin+1;
+ const xmin=0,xmax=Math.max(1,series[0].data[series[0].data.length-1][0]);
+ const X=x=>p.l+(x-xmin)/(xmax-xmin)*(W-p.l-p.r);
+ const Y=y=>H-p.b-(y-ymin)/(ymax-ymin)*(H-p.t-p.b);
+ ctx.strokeStyle='#e3e9ee';ctx.fillStyle='#5d6d7b';ctx.lineWidth=1;ctx.font='12px Arial';
+ for(let i=0;i<=5;i++){let y=ymin+(ymax-ymin)*i/5,py=Y(y);ctx.beginPath();ctx.moveTo(p.l,py);ctx.lineTo(W-p.r,py);ctx.stroke();ctx.fillText(y.toFixed(1),5,py+4);}
+ for(let i=0;i<=5;i++){let x=xmax*i/5,px=X(x);ctx.beginPath();ctx.moveTo(px,p.t);ctx.lineTo(px,H-p.b);ctx.stroke();ctx.fillText(x.toFixed(1),px-10,H-18);}
+ ctx.strokeStyle='#263b4e';ctx.beginPath();ctx.moveTo(p.l,p.t);ctx.lineTo(p.l,H-p.b);ctx.lineTo(W-p.r,H-p.b);ctx.stroke();
+ const colors=['#1769aa','#e68a32'];
+ series.forEach((s,j)=>{ctx.strokeStyle=colors[j];ctx.lineWidth=2.5;ctx.beginPath();s.data.forEach((d,i)=>{if(i===0)ctx.moveTo(X(d[0]),Y(d[1]));else ctx.lineTo(X(d[0]),Y(d[1]));});ctx.stroke();});
+ ctx.fillStyle='#263b4e';ctx.fillText(xLabel,W/2-25,H-3);
+ series.forEach((s,j)=>{ctx.fillStyle=colors[j];ctx.fillRect(p.l+j*155,p.t+2,18,3);ctx.fillStyle='#34495b';ctx.fillText(s.name,p.l+24+j*155,p.t+7);});
+}
+function calculate(){
+ const m=+$('m').value,T=+$('T').value,g=+$('g').value,k=+$('k').value,h=+$('h').value,tf=+$('tf').value;
+ const err=$('error');err.style.display='none';
+ if(!(m>0&&h>0&&tf>0&&T>=0&&g>=0&&k>=0)||![m,T,g,k,h,tf].every(Number.isFinite)){err.style.display='block';err.textContent='Verifica los datos: masa, paso y tiempo deben ser positivos; los demás parámetros no pueden ser negativos.';return;}
+ const A=T/m-g,B=k/m;
+ let t=0,v=0,y=0,rows=[{t,v,y,...exact(0,A,B)}];
+ let guard=0;
+ while(t<tf-1e-10&&guard<200000){
+  const dt=Math.min(h,tf-t),oldv=v;
+  y+=dt*oldv;v+=dt*(A-B*oldv);t+=dt;guard++;
+  const ex=exact(t,A,B);rows.push({t,v,y,...ex});
+ }
+ if(guard>=200000){err.style.display='block';err.textContent='Demasiados pasos. Aumenta h o reduce el tiempo final.';return;}
+ const last=rows[rows.length-1],ev=Math.abs(last.v-last.v),ey=Math.abs(last.y-last.y);
+ const finalExact=exact(tf,A,B);
+ $('vE').textContent=last.v.toFixed(4);$('vA').textContent=finalExact.v.toFixed(4);
+ $('yE').textContent=last.y.toFixed(4);$('yA').textContent=finalExact.y.toFixed(4);
+ $('ev').textContent=Math.abs(last.v-finalExact.v).toFixed(4);$('ey').textContent=Math.abs(last.y-finalExact.y).toFixed(4);
+ const tbody=$('results');tbody.innerHTML='';
+ const maxRows=101,indices=[];
+ if(rows.length<=maxRows)rows.forEach((r,i)=>indices.push(i));
+ else for(let i=0;i<maxRows;i++)indices.push(Math.round(i*(rows.length-1)/(maxRows-1)));
+ indices.forEach(i=>{const r=rows[i],tr=document.createElement('tr');[r.t,r.v,r.v===undefined?0:r.v, r.y, r.y,Math.abs(r.v-r.v),Math.abs(r.y-r.y)].forEach(()=>{});const ex=exact(r.t,A,B);[r.t,r.v,ex.v,r.y,ex.y,Math.abs(r.v-ex.v),Math.abs(r.y-ex.y)].forEach(n=>{const td=document.createElement('td');td.textContent=n.toFixed(4);tr.appendChild(td);});tbody.appendChild(tr);});
+ draw($('velocityChart'),[{name:'Euler',data:rows.map(r=>[r.t,r.v])},{name:'Analítica',data:rows.map(r=>[r.t,exact(r.t,A,B).v])}],'Tiempo (s)','Velocidad');
+ draw($('heightChart'),[{name:'Euler',data:rows.map(r=>[r.t,r.y])},{name:'Analítica',data:rows.map(r=>[r.t,exact(r.t,A,B).y])}],'Tiempo (s)','Altura');
+}
+function resetValues(){[['m',1000],['T',15000],['g',9.81],['k',100],['h',2],['tf',20]].forEach(([id,v])=>$(id).value=v);calculate();}
+calculate();
+</script>
+</body>
+</html>
